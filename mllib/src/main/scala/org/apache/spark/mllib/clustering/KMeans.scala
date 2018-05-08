@@ -334,6 +334,7 @@ class KMeans private (
       }
 
       cost = costAccum.value
+      sc.SLAQupdateLoss(cost)
       iteration += 1
     }
 
