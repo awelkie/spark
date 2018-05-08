@@ -2398,18 +2398,15 @@ class SparkContext(config: SparkConf) extends Logging {
     }
   }
 
-  // In order to prevent multiple SparkContexts from being active at the same time, mark this
-  // context as having finished construction.
-  // NOTE: this must be placed at the end of the SparkContext constructor.
-  SparkContext.setActiveContext(this, allowMultipleContexts)
-
   private val SPARK_SCHEDULER_POOL = "spark.scheduler.pool"
   private val poolLosses = new ConcurrentHashMap[String, CollectionAccumulator[Double]]().asScala
+  private val FULL_WEIGHT = 1000
 
   // Creates a new pool with fair scheduling and assigns it to be the pool for the current thread.
-  def SLAQnewPool() = {
+  def SLAQnewPool(): Unit = {
     var name = UUID.randomUUID().toString
-    taskScheduler.rootPool.addSchedulable(new Pool(name, SchedulingMode.FAIR, 0, 1))
+    logInfo(s"SLAQ: Adding pool with name $name")
+    taskScheduler.rootPool.addSchedulable(new Pool(name, SchedulingMode.FAIR, 0, FULL_WEIGHT))
     setLocalProperty(SPARK_SCHEDULER_POOL, name)
     poolLosses.put(name, collectionAccumulator)
   }
@@ -2427,20 +2424,29 @@ class SparkContext(config: SparkConf) extends Logging {
   }
 
   private def setCurrentPoolWeight(weight: Int) = {
-    getCurrentPool().weight = weight
+    val pool = getCurrentPool()
+    logInfo(s"SLAQ: Setting weight for pool ${pool.name} to $weight")
+    pool.weight = weight
   }
 
   // Change's the current thread's pool weight via the SLAQ update algorithm.
-  def SLAQupdateLoss(loss: Double) = {
-    val lossCollection = poolLosses.get(getThreadId()).get
+  def SLAQupdateLoss(loss: Double): Unit = {
+    val name = getThreadId()
+    logInfo(s"SLAQ: calling updateLoss from thread $name with loss $loss")
+    val lossCollection = poolLosses.get(name).get
     lossCollection.add(loss)
     val losses = lossCollection.value.asScala
     if (losses.size >= 2) {
       val deltaLoss = losses(losses.size - 2) - losses.last
-      val maxLoss = (losses, losses.tail).zipped.map(_-_).max
-      setCurrentPoolWeight((deltaLoss / maxLoss).toInt)
+      val maxDeltaLoss = (losses, losses.tail).zipped.map(_-_).max
+      setCurrentPoolWeight((FULL_WEIGHT * deltaLoss / maxDeltaLoss).toInt)
     }
   }
+
+  // In order to prevent multiple SparkContexts from being active at the same time, mark this
+  // context as having finished construction.
+  // NOTE: this must be placed at the end of the SparkContext constructor.
+  SparkContext.setActiveContext(this, allowMultipleContexts)
 }
 
 /**
