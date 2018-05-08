@@ -51,6 +51,7 @@ object KMeansSlaqExample {
     }
 
     for (t <- threads) {
+      Thread.sleep(5 * 1000)
       t.start()
     }
 

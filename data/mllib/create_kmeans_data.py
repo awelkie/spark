@@ -3,10 +3,6 @@
 
 import numpy
 
-CLUSTERS = [
-    [0] * 10,
-    [2] * 10,
-]
 CLUSTER_DIMS = 100
 NUM_CLUSTERS = 10
 NUM_POINTS_PER_CLUSTER = 1_000
