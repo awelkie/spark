@@ -2402,6 +2402,45 @@ class SparkContext(config: SparkConf) extends Logging {
   // context as having finished construction.
   // NOTE: this must be placed at the end of the SparkContext constructor.
   SparkContext.setActiveContext(this, allowMultipleContexts)
+
+  private val SPARK_SCHEDULER_POOL = "spark.scheduler.pool"
+  private val poolLosses = new ConcurrentHashMap[String, CollectionAccumulator[Double]]().asScala
+
+  // Creates a new pool with fair scheduling and assigns it to be the pool for the current thread.
+  def SLAQnewPool() = {
+    var name = UUID.randomUUID().toString
+    taskScheduler.rootPool.addSchedulable(new Pool(name, SchedulingMode.FAIR, 0, 1))
+    setLocalProperty(SPARK_SCHEDULER_POOL, name)
+    poolLosses.put(name, collectionAccumulator)
+  }
+
+  private def getThreadId(): String = {
+    getLocalProperty(SPARK_SCHEDULER_POOL)
+  }
+
+  private def getCurrentPool(): Pool = {
+    taskScheduler.rootPool.schedulableNameToSchedulable.get(getThreadId()).asInstanceOf[Pool]
+  }
+
+  private def getCurrentPoolWeight(): Int = {
+    getCurrentPool().weight
+  }
+
+  private def setCurrentPoolWeight(weight: Int) = {
+    getCurrentPool().weight = weight
+  }
+
+  // Change's the current thread's pool weight via the SLAQ update algorithm.
+  def SLAQupdateLoss(loss: Double) = {
+    val lossCollection = poolLosses.get(getThreadId()).get
+    lossCollection.add(loss)
+    val losses = lossCollection.value.asScala
+    if (losses.size >= 2) {
+      val deltaLoss = losses(losses.size - 2) - losses.last
+      val maxLoss = (losses, losses.tail).zipped.map(_-_).max
+      setCurrentPoolWeight((deltaLoss / maxLoss).toInt)
+    }
+  }
 }
 
 /**

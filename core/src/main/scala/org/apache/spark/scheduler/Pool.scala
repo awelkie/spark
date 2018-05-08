@@ -37,7 +37,7 @@ private[spark] class Pool(
 
   val schedulableQueue = new ConcurrentLinkedQueue[Schedulable]
   val schedulableNameToSchedulable = new ConcurrentHashMap[String, Schedulable]
-  val weight = initWeight
+  var weight = initWeight
   val minShare = initMinShare
   var runningTasks = 0
   val priority = 0
