@@ -37,9 +37,9 @@ object KMeansSlaqExample {
     val data = sc.textFile("data/mllib/kmeans_data.txt")
     val parsedData = data.map(s => Vectors.dense(s.split(' ').map(_.toDouble))).cache()
     val numClusters = 20
-    val numIterations = 1000
+    val numIterations = 500
 
-    val numJobs = 100
+    val numJobs = 50
     val threads = (0 to numJobs).map {_ =>
       new Thread {
         sc.SLAQnewPool()
@@ -51,7 +51,7 @@ object KMeansSlaqExample {
     }
 
     for (t <- threads) {
-      Thread.sleep(5 * 1000)
+      Thread.sleep(500)
       t.start()
     }
 
