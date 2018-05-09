@@ -2404,6 +2404,9 @@ class SparkContext(config: SparkConf) extends Logging {
 
   // Creates a new pool with fair scheduling and assigns it to be the pool for the current thread.
   def SLAQnewPool(): Unit = {
+    if (getConf.get("spark.scheduler.mode") != "FAIR") {
+      throw new SparkException("Cannot use SLAQ without fair scheduler")
+    }
     var name = UUID.randomUUID().toString
     logInfo(s"SLAQ: Adding pool with name $name")
     taskScheduler.rootPool.addSchedulable(new Pool(name, SchedulingMode.FAIR, 0, FULL_WEIGHT))
@@ -2439,7 +2442,9 @@ class SparkContext(config: SparkConf) extends Logging {
     if (losses.size >= 2) {
       val deltaLoss = losses(losses.size - 2) - losses.last
       val maxDeltaLoss = (losses, losses.tail).zipped.map(_-_).max
-      setCurrentPoolWeight((FULL_WEIGHT * deltaLoss / maxDeltaLoss).toInt)
+      if (getConf.getBoolean("spark.useSLAQ", true)) {
+        setCurrentPoolWeight((FULL_WEIGHT * deltaLoss / maxDeltaLoss).toInt)
+      }
     }
   }
 
