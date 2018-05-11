@@ -28,6 +28,7 @@ def main():
 
     # Map from job ID to map from timestamp to loss value
     loss_events = defaultdict(dict)
+    per_iter_loss = defaultdict(list)
     for line in args.logfile:
         match = regex.match(line)
         if match:
@@ -36,6 +37,7 @@ def main():
             timestamp = dateutil.parser.parse(time_str)
             loss = float(loss_str)
             loss_events[thread_id][timestamp] = loss
+            per_iter_loss[thread_id].append(loss)
 
     # pyplot.figure()
     # for loss_trace in loss_events.values():
@@ -48,14 +50,23 @@ def main():
     # pyplot.show()
 
     pyplot.figure()
+    for loss_trace in per_iter_loss.values():
+        iterations = [i for i in range(len(loss_trace))]
+        pyplot.plot(iterations, loss_trace)
+        pyplot.grid(True)
+
+
+    pyplot.show()
+
+    pyplot.figure()
     for loss_trace in loss_events.values():
         timestamps = list(loss_trace.keys())
         losses = list(loss_trace.values())
         loss_reductions = [losses[-1] / l for l in losses]
         elapsed_time = [(t - timestamps[0]).total_seconds() for t in timestamps]
         pyplot.plot(loss_reductions, elapsed_time)
-        pyplot.xlim(0.8, 1)
-        pyplot.ylim(0, 0.1)
+#        pyplot.xlim(0.8, 1)
+#        pyplot.ylim(0, 0.1)
         pyplot.grid(True)
     pyplot.show()
 
