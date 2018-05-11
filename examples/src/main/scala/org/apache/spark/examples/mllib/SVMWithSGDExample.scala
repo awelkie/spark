@@ -30,7 +30,7 @@ object SVMWithSGDExample {
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf().setAppName("SVMWithSGDExample")
     val sc = new SparkContext(conf)
-    sc.SLAQnewPool()
+    // sc.SLAQnewPool()
 
     // $example on$
     // Load training data in LIBSVM format.
@@ -45,26 +45,45 @@ object SVMWithSGDExample {
 
     // Run training algorithm to build the model
     val numIterations = 1000
-    val model = SVMWithSGD.train(training, numIterations)
+    val numJobs = 20
 
-    // Clear the default threshold.
-    model.clearThreshold()
-
-    // Compute raw scores on the test set.
-    val scoreAndLabels = test.map { point =>
-      val score = model.predict(point.features)
-      (score, point.label)
+    val threads = (0 to numJobs).map {_ =>
+        new Thread{
+            override def run(): Unit = {
+                sc.SLAQnewPool()
+                val model = SVMWithSGD.train(training, numIterations)
+            }
+        }
     }
 
-    // Get evaluation metrics.
-    val metrics = new BinaryClassificationMetrics(scoreAndLabels)
-    val auROC = metrics.areaUnderROC()
+    for (t <- threads) {
+        Thread.sleep(1000*2)
+        t.start()
+    }
 
-    println(s"Area under ROC = $auROC")
+    for (t <- threads) {
+        t.join()
+    }
+//    val model = SVMWithSGD.train(training, numIterations)
+
+    // Clear the default threshold.
+//    model.clearThreshold()
+
+    // Compute raw scores on the test set.
+//    val scoreAndLabels = test.map { point =>
+//      val score = model.predict(point.features)
+//      (score, point.label)
+//    }
+
+    // Get evaluation metrics.
+//    val metrics = new BinaryClassificationMetrics(scoreAndLabels)
+//    val auROC = metrics.areaUnderROC()
+
+//    println(s"Area under ROC = $auROC")
 
     // Save and load model
-    model.save(sc, "target/tmp/scalaSVMWithSGDModel")
-    val sameModel = SVMModel.load(sc, "target/tmp/scalaSVMWithSGDModel")
+//    model.save(sc, "target/tmp/scalaSVMWithSGDModel")
+//    val sameModel = SVMModel.load(sc, "target/tmp/scalaSVMWithSGDModel")
     // $example off$
 
     sc.stop()
