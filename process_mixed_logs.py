@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Parses the logs from the KMeans example.
+Parses the logs from the Mixed example.
 """
 
 import argparse
@@ -11,6 +11,7 @@ import uuid
 import dateutil.parser
 from matplotlib import pyplot
 import numpy
+import pandas
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -34,12 +35,20 @@ def main():
                 print(line)
                 continue
 
+    dataframes = [pandas.Series(list(trace.values()), index=list(trace.keys()))
+        for trace in loss_events.values()]
+
+    resampled = [df.asfreq('5S', method='pad') for df in dataframes]
+    centered = [df - df[-1] for df in resampled]
+    normalized = [df / df[0] for df in centered]
+
+    summed = pandas.Series()
+    for series in normalized:
+        summed = summed.add(series, fill_value=0)
+    summed = summed.resample('5S').mean()
+
     pyplot.figure()
-    for loss_trace in loss_events.values():
-        losses = numpy.array(list(loss_trace.values()))
-        losses -= losses[-1]
-        losses /= losses[0]
-        pyplot.plot_date(list(loss_trace.keys()), losses)
+    pyplot.plot_date(summed.index, summed)
     pyplot.show()
 
 if __name__ == '__main__':
