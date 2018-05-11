@@ -19,12 +19,14 @@
 package org.apache.spark.examples.mllib
 
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.internal.Logging
 // $example on$
 import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
 import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.util.MLUtils
 // $example off$
 
-object KMeansSlaqExample {
+object KMeansSlaqExample extends Logging{
 
   def main(args: Array[String]) {
 
@@ -36,6 +38,10 @@ object KMeansSlaqExample {
     // Load and parse the data
     val data = sc.textFile("data/mllib/kmeans_data.txt")
     val parsedData = data.map(s => Vectors.dense(s.split(' ').map(_.toDouble))).cache()
+
+//    val data = MLUtils.loadLibSVMFile(sc, "data/mllib/kdda")
+//    val parsedData = data.map(s => s.features)
+
     val numClusters = 20
     val numIterations = 500
 
