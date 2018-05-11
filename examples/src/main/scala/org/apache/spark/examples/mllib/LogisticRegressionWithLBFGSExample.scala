@@ -34,33 +34,59 @@ object LogisticRegressionWithLBFGSExample {
 
     // $example on$
     // Load training data in LIBSVM format.
-    val data = MLUtils.loadLibSVMFile(sc, "data/mllib/sample_libsvm_data.txt")
+    // val data = MLUtils.loadLibSVMFile(sc, "data/mllib/sample_libsvm_data.txt")
+    val data = MLUtils.loadLibSVMFile(sc, "data/mllib/mnist.scale")
 
     // Split data into training (60%) and test (40%).
-    val splits = data.randomSplit(Array(0.6, 0.4), seed = 11L)
+    val splits = data.randomSplit(Array(0.95, 0.05), seed = 11L)
     val training = splits(0).cache()
-    val test = splits(1)
+    val test = splits(1).cache()
 
     // Run training algorithm to build the model
-    val model = new LogisticRegressionWithLBFGS()
-      .setNumClasses(10)
-      .run(training)
+    sc.SLAQnewPool()
 
-    // Compute raw scores on the test set.
-    val predictionAndLabels = test.map { case LabeledPoint(label, features) =>
-      val prediction = model.predict(features)
-      (prediction, label)
+    val numClusters = 20
+    val numJobs = 3
+
+    val threads = (0 to numJobs).map {_ =>
+        new Thread {
+            override def run(): Unit = {
+                sc.SLAQnewPool()
+                val model = new LogisticRegressionWithLBFGS()
+                  .setNumClasses(10)
+                  .run(training)
+            }
+        }
     }
 
+    for (t <- threads) {
+        Thread.sleep(1000*2)
+        t.start()
+    }
+
+    for (t <- threads) {
+        t.join()
+    }
+
+//    val model = new LogisticRegressionWithLBFGS()
+//      .setNumClasses(10)
+//      .run(training)
+
+    // Compute raw scores on the test set.
+//    val predictionAndLabels = test.map { case LabeledPoint(label, features) =>
+//      val prediction = model.predict(features)
+//      (prediction, label)
+//    }
+
     // Get evaluation metrics.
-    val metrics = new MulticlassMetrics(predictionAndLabels)
-    val accuracy = metrics.accuracy
-    println(s"Accuracy = $accuracy")
+//    val metrics = new MulticlassMetrics(predictionAndLabels)
+//    val accuracy = metrics.accuracy
+//    println(s"Accuracy = $accuracy")
 
     // Save and load model
-    model.save(sc, "target/tmp/scalaLogisticRegressionWithLBFGSModel")
-    val sameModel = LogisticRegressionModel.load(sc,
-      "target/tmp/scalaLogisticRegressionWithLBFGSModel")
+//    model.save(sc, "target/tmp/scalaLogisticRegressionWithLBFGSModel")
+//    val sameModel = LogisticRegressionModel.load(sc,
+//      "target/tmp/scalaLogisticRegressionWithLBFGSModel")
     // $example off$
 
     sc.stop()

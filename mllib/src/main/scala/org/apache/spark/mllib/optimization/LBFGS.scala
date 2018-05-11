@@ -190,6 +190,8 @@ object LBFGS extends Logging {
       regParam: Double,
       initialWeights: Vector): (Vector, Array[Double]) = {
 
+    val sc = data.sparkContext
+
     val lossHistory = mutable.ArrayBuilder.make[Double]
 
     val numExamples = data.count()
@@ -208,10 +210,13 @@ object LBFGS extends Logging {
      */
     var state = states.next()
     while (states.hasNext) {
+      var sv = state.value
       lossHistory += state.value
       state = states.next()
+      sc.SLAQupdateLoss(sv)
     }
     lossHistory += state.value
+
 
     val weights = Vectors.fromBreeze(state.x)
 
