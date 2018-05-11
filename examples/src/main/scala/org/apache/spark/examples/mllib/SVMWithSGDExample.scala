@@ -30,10 +30,13 @@ object SVMWithSGDExample {
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf().setAppName("SVMWithSGDExample")
     val sc = new SparkContext(conf)
+    sc.SLAQnewPool()
 
     // $example on$
     // Load training data in LIBSVM format.
-    val data = MLUtils.loadLibSVMFile(sc, "data/mllib/sample_libsvm_data.txt")
+//    val data = MLUtils.loadLibSVMFile(sc, "data/mllib/sample_libsvm_data.txt")
+    // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#real-sim
+    val data = MLUtils.loadLibSVMFile(sc, "data/mllib/real-sim_post")
 
     // Split data into training (60%) and test (40%).
     val splits = data.randomSplit(Array(0.6, 0.4), seed = 11L)
@@ -41,7 +44,7 @@ object SVMWithSGDExample {
     val test = splits(1)
 
     // Run training algorithm to build the model
-    val numIterations = 100
+    val numIterations = 1000
     val model = SVMWithSGD.train(training, numIterations)
 
     // Clear the default threshold.
