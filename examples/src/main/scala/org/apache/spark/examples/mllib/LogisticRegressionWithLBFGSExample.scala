@@ -46,7 +46,7 @@ object LogisticRegressionWithLBFGSExample {
     sc.SLAQnewPool()
 
     val numClusters = 20
-    val numJobs = 3
+    val numJobs = 50
 
     val threads = (0 to numJobs).map {_ =>
         new Thread {
