@@ -32,6 +32,7 @@ object LinearRegressionWithSGDExample {
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf().setAppName("LinearRegressionWithSGDExample")
     val sc = new SparkContext(conf)
+    sc.SLAQnewPool()
 
     // $example on$
     // Load and parse the data

@@ -5,7 +5,7 @@ import numpy
 
 CLUSTER_DIMS = 100
 NUM_CLUSTERS = 10
-NUM_POINTS_PER_CLUSTER = 1_000
+NUM_POINTS_PER_CLUSTER = 1000
 
 def main():
     clusters = [[i] * CLUSTER_DIMS for i in range(NUM_CLUSTERS)]

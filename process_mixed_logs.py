@@ -34,6 +34,8 @@ def main():
             except:
                 print(line)
                 continue
+    print(type(loss_events))
+#    print(loss_events)
 
     dataframes = [pandas.Series(list(trace.values()), index=list(trace.keys()))
         for trace in loss_events.values()]
