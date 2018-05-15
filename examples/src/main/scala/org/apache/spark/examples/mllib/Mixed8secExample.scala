@@ -27,7 +27,7 @@ import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 // $example off$
 
-object MixedExample {
+object Mixed8secExample {
 
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf().setAppName("MixedExample")
@@ -51,7 +51,7 @@ object MixedExample {
 
     // Run training algorithm to build the model
     val numClusters = 20
-    val numJobs = 50
+    val numJobs = 160
 
     val threads = (0 to numJobs).map {i =>
         new Thread {
@@ -73,7 +73,7 @@ object MixedExample {
     }
 
     for (t <- threads) {
-        Thread.sleep(1000*2)
+        Thread.sleep(1000*8)
         t.start()
     }
 
@@ -105,4 +105,4 @@ object MixedExample {
     sc.stop()
   }
 }
-// scalastyle:on println
+
